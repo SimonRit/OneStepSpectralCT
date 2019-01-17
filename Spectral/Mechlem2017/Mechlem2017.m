@@ -91,15 +91,15 @@ for iter=1:maxIter
     for subset=1:NbSubsets
         
         % Run the forward model
-        [forw, forwmu, forwmumu] = WeidingerForwardModel(alpha_k, SubAs{subset}, M, S, diagS);
+        [forw, forwmu, forwmumu] = WeidingerForwardModel(z_k, SubAs{subset}, M, S, diagS);
         ratios = SubMeasurements{subset}.' ./ (forw + eps);
 
-        % Compute the gradient of the data-attachment surrogate function at alpha_k
+        % Compute the gradient of the data-attachment surrogate function at z_k
         ToBackProject = (1 - ratios) .* forwmu;
         ToBackProject = squeeze(sum(ToBackProject, 1));
         gradients = SubAs{subset}.' * ToBackProject;
         
-        % Compute the hessian of the surrogate function at alpha_k
+        % Compute the hessian of the surrogate function at z_k
         ToBackProject = squeeze(sum(forwmumu, 1));
         ToBackProject = ToBackProject .* Sum_aijs{subset};
         ToBackProject = reshape(ToBackProject, [size(ToBackProject, 1) nmat * nmat]);
@@ -108,7 +108,7 @@ for iter=1:maxIter
         % - Compute the gradient and hessian of the regularization surrogate
         % - Perform one step of Newton's method to find the minimum of the
         % separable quadratic surrogate
-        [regul_grad, regul_hess] = SQSregul(alpha_k, T, ObjectSize, lambda, delta, nrealmat, NbSubsets, 'huber');
+        [regul_grad, regul_hess] = SQSregul(z_k, T, ObjectSize, lambda, delta, nrealmat, NbSubsets, 'huber');
         gradients = gradients + regul_grad * T;
         if(runOnGPU)
             g_k = GPU_GetNewtonUpdate(hessians,regul_hess, gradients, T);
